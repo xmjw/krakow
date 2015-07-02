@@ -52,7 +52,7 @@ module Krakow
         while(reading?)
           res = defer do
             Kernel.select([socket], nil, nil, nil)
-            socket{|s| s.readpartial(1024)}
+            socket{|s| safely_readpartial(s, 1024)}
           end
           if(res)
             debug "Received content from socket: #{res.inspect}"
@@ -63,6 +63,17 @@ module Krakow
           end
         end
       end
+    end
+
+    # Wraps read partial to safely handle EOFErros, returns some data, or nil.
+    #
+    # @params socket [IO]
+    # @params len [Integer]
+    # return [String]
+    def safely_readpartial(socket, len)
+      socket.readpartial(len)
+    rescue EOFError
+      nil
     end
 
     # Fetch bytes from socket
